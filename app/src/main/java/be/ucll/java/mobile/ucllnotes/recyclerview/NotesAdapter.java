@@ -1,0 +1,74 @@
+package be.ucll.java.mobile.ucllnotes.recyclerview;
+
+import android.content.Context;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.List;
+
+import be.ucll.java.mobile.ucllnotes.R;
+import be.ucll.java.mobile.ucllnotes.database.NotesDao;
+import be.ucll.java.mobile.ucllnotes.model.Note;
+
+public class NotesAdapter extends RecyclerView.Adapter<NoteHolder> {
+    private static final String TAG = "NotesAdapter";
+
+    private NotesDao dao;
+    private List<Note> list;
+    private Context context;
+    private LayoutInflater layoutInflater;
+    private NoteClick noteClick;
+
+    public NotesAdapter(NotesDao dao, List<Note> list, Fragment frag) {
+        context = frag.getContext();
+        layoutInflater = LayoutInflater.from(context);
+        this.dao = dao;
+        this.list = list;
+        this.noteClick = (NoteClick) frag;
+    }
+
+    @NonNull
+    @Override
+    public NoteHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = layoutInflater.inflate(R.layout.recyclerview_item, parent, false);
+        return new NoteHolder(view, noteClick);
+    }
+
+    // Voor elk item in de List van de adapter wordt deze method aangeroepen
+    // om de 'Data' te visualiseren in de UI met de Recyclerview
+    @Override
+    public void onBindViewHolder(@NonNull NoteHolder holder, int position) {
+        Log.d(TAG, "onBindViewHolder: " + list.get(position));
+        Note n = list.get(position);
+        holder.getTxtRVTitle().setText(n.getTitle());
+    }
+
+    @Override
+    public int getItemCount() {
+        return list.size();
+    }
+
+    public void deleteNote(int position) {
+        Log.d(TAG, "deleteNote: " + position);
+
+        // Verwijder het item uit de databank
+        Note n = list.get(position);
+        dao.deleteNote(n);
+
+        // Neem het item ook weg uit de lijst in de Adapter
+        list.remove(position);
+
+        // Trigger refresh van de lijst/RecyclerView in de UI
+        notifyItemRemoved(position);
+    }
+
+    public Context getContext() {
+        return context;
+    }
+}

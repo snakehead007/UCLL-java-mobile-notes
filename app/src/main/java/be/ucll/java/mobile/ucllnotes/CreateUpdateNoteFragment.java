@@ -24,7 +24,7 @@ public class CreateUpdateNoteFragment extends Fragment {
     private static final String TAG = "CreateUpdNoteFragment";
 
     private String operation;
-    private long id;
+    private Long id;
 
     private Button btnSave;
     private TextView txtTitle;
@@ -88,7 +88,7 @@ public class CreateUpdateNoteFragment extends Fragment {
                 } else {
                     // Maak een nieuwe Nota aan en voeg die toe aan de databank
                     Note n = new Note(title.trim(), content.trim());
-                    long id = dao.insertNote(n);
+                    Long id = dao.insertNote(n);
                     Log.i(TAG, "Note created with ID: " + id);
                 }
 

@@ -1,0 +1,101 @@
+package be.ucll.java.mobile.ucllnotes;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import java.util.List;
+
+import be.ucll.java.mobile.ucllnotes.database.Constants;
+import be.ucll.java.mobile.ucllnotes.database.NotesDao;
+import be.ucll.java.mobile.ucllnotes.database.NotesDatabase;
+import be.ucll.java.mobile.ucllnotes.model.Note;
+import be.ucll.java.mobile.ucllnotes.recyclerview.NoteClick;
+import be.ucll.java.mobile.ucllnotes.recyclerview.NotesAdapter;
+import be.ucll.java.mobile.ucllnotes.recyclerview.SwipeToDeleteCallback;
+
+public class NoteListFragment extends Fragment implements NoteClick {
+    private static final String TAG = "NoteListFragment";
+
+    // UI Components
+    private FloatingActionButton fab;
+    private RecyclerView rvNotes;
+
+    // Date Access Object voor database CRUDS operaties
+    private NotesDao dao;
+
+    // Lijstje van Note objecten
+    private List<Note> notes;
+
+    // onCreateView wordt in de lifecycle van de App maar 1 keer opgeroepen op het Fragment
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_notelist, container, false);
+    }
+
+    // onViewCreated wordt opgeroepen elke keer als het Fragment zichtbaar wordt
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        // Ophalen UI componenten. De 'fab' maakt van het scherm van de Main Activity
+        fab = getActivity().findViewById(R.id.fab);
+        rvNotes = view.findViewById(R.id.rvNotes);
+
+        // Ophalen data uit databank
+        dao = NotesDatabase.getInstance(getContext()).getNotesDao();
+        notes = dao.getAllNotes();
+
+        // Koppel een adapter aan de RecyclerView met de opgehaalde nota's
+        NotesAdapter adapter = new NotesAdapter(dao, notes, this);
+        rvNotes.setLayoutManager(new LinearLayoutManager(getContext()));
+        rvNotes.setAdapter(adapter);
+
+        // Swipe links of rechts om een nota te verwijderen uit de lijst en de databank
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new SwipeToDeleteCallback(adapter));
+        itemTouchHelper.attachToRecyclerView(rvNotes);
+
+        // Behandel de click event op de FloatingActionButton
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.i(TAG, "Create new note");
+                navigate(Constants.OPERATION_CREATE, -1L);
+            }
+        });
+    }
+
+    @Override
+    public void onRVNoteClick(int pos) {
+        Note n = notes.get(pos);
+        Log.i(TAG, "Update note with ID: " + n.getId());
+        navigate(Constants.OPERATION_UPDATE, n.getId());
+    }
+
+    private void navigate(String operation, long id) {
+        // 1. Navigeer naar het fragment waar je nota kan intikken of bijwerken
+        Bundle bundle = new Bundle();
+        bundle.putString(Constants.OPERATION, operation);
+
+        if (id != -1L) {
+            bundle.putLong(Constants.ID, id);
+        }
+
+        NavHostFragment.findNavController(NoteListFragment.this)
+                .navigate(R.id.action_FirstFragment_to_SecondFragment, bundle);
+
+        // 2. Maak de FloatingActionButton onzichtbaar
+        fab.setVisibility(View.INVISIBLE);
+    }
+
+}
